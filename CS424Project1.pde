@@ -23,16 +23,38 @@ float plotX2, plotY2;
 
 float labelX, labelY;
 
+boolean showAllCountries;
 // Control Position and Size vars
 // TextField
 int placeTextFieldX, placeTextFieldY;
 int placeTextFieldHeight, placeTextFieldWidth;
 int placeTextFieldTextSize;
 
-// 
+// dummy var to force yearsSlider to use Ints
+int yearsSlider;
 
+// DataBox
+int dataBoxX, dataBoxY;
+
+// AutoCompletBox
+int autoCompleteBoxX, autoCompleteBoxY;
+
+// ListBox related
+int listBoxHeight, listBoxWidth;
+int listBoxItemHeight, listBoxItemWidth;
+int listBoxItemTextSize;
+
+// yearsSlider related
+int yearsSliderX, yearsSliderY;
+int yearsSliderWidth, yearsSliderHeight;
+int yearsSliderHandleSize;
+
+// selectPlace related
+int selectButtonX, selectButtonY;
+int selectButtonWidth, selectButtonHeight;
+
+// selectButton related
 float labelDataMin = 0;
-float labelDataMax;
 
 int startCol;
 int endCol;
@@ -53,6 +75,7 @@ ListBox autoCompleteBox;
 ListBox dataSelectionBox;
 Textfield inputBox;
 Range yearRange;
+Button selectPlaceButton;
 //ListBoxControlListener myListener;
 
 String text;
@@ -84,7 +107,9 @@ public void setup() {
   //size(720, 405);
   touchListener = new TouchListener();
   
-  omicronManager.setTouchListener(touchListener);
+  //omicronManager.setTouchListener(touchListener);
+ 
+  showAllCountries = true;
  
   applet = this;
   
@@ -107,13 +132,48 @@ public void setup() {
   endCol = years.length - 1;
   
   // Corners of the plotted time series
-  plotX1 = 150+70*scaleFactor; 
+  plotX1 = 150+70*scaleFactor;
   plotX2 = width - 80;
   labelX = 20+35*scaleFactor;
-  plotY1 = 60+30*scaleFactor;
-  plotY2 = height - 70 - 15*scaleFactor;
-  labelY = height - 25 - 5*scaleFactor;
+  plotY1 = 10+20*scaleFactor;
+  plotY2 = height - 100 - 20*scaleFactor;
+  labelY = height - 80 - 5*scaleFactor;
+  // Control Position and Size vars
   
+  // TextField
+  placeTextFieldX = 10;
+  placeTextFieldY = 10+30*scaleFactor;
+  placeTextFieldHeight = 20 * scaleFactor;
+  placeTextFieldWidth = 105 * scaleFactor;
+  placeTextFieldTextSize = 20 * scaleFactor;
+  
+  // ListBox related
+  listBoxHeight = 150 * scaleFactor;
+  listBoxWidth = placeTextFieldWidth;
+  listBoxItemHeight = 17 * scaleFactor;
+  listBoxItemTextSize = 10 * scaleFactor;
+
+  // AutoCompletBox
+  autoCompleteBoxX = placeTextFieldX;
+  autoCompleteBoxY = placeTextFieldY + placeTextFieldHeight;
+
+    // DataBox
+  dataBoxX = autoCompleteBoxX;
+  dataBoxY = autoCompleteBoxY + listBoxHeight;
+  
+  // yearsSlider related
+  yearsSliderX = floor(plotX1);
+  yearsSliderY = height - (40 * scaleFactor);
+  yearsSliderWidth = floor(plotX2 - plotX1);
+  yearsSliderHeight = 25 * scaleFactor;
+  yearsSliderHandleSize = 15 * scaleFactor;
+  
+  // selectPlace related
+  selectButtonX = 100;
+  selectButtonY = 100;
+  selectButtonWidth = 40;
+  selectButtonHeight = 40;
+
   plotFont = createFont("SansSerif", 20*scaleFactor);
   
   textFont(plotFont);
@@ -126,6 +186,7 @@ public void setup() {
   initYearsSlider();
   initAutoCompleteBox();
   initDataSelectionBox();
+  initSelectButton();
   
   //myListener = new ListBoxControlListener();
   
@@ -162,7 +223,6 @@ public void drawTable(int row) {
 
 public void draw() {
   background(224);
-  
   omicronManager.process();
   
   // don't keep looping over an array over and over again
@@ -181,25 +241,28 @@ public void draw() {
   
   drawTitle();
   drawAxisLabels();
-  drawYearLabels();
   
-  stroke(0xff5679C1);
-  strokeWeight(2);
-  noFill();
+  if((yearMax - yearMin) != 0) {
+    drawYearLabels();
   
-  if(placeIndex >= 0) {
-    currentPlace = countries[placeIndex];
+    stroke(0xff5679C1);
+    strokeWeight(2);
+    noFill();
+  
+    if(placeIndex >= 0) {
+      currentPlace = countries[placeIndex];
+    }
+    
+    if(currentPlace != "") {
+      int row = rowCorrespondingToPlace(currentPlace);
+      unitInterval = data.calculateStandardDeviation(row);
+      dataMin = data.getRowMin(row); 
+      dataMax = data.getRowMax(row); 
+      displayGraph(row);
+      //drawDataPoints(row);
+    }
+    drawUnitLabels();
   }
-  
-  if(currentPlace != "") {
-    int row = rowCorrespondingToPlace(currentPlace);
-    unitInterval = data.calculateStandardDeviation(row);
-    dataMin = data.getRowMin(row); 
-    dataMax = data.getRowMax(row); 
-    displayGraph(row);
-    //drawDataPoints(row);
-  }
-  drawUnitLabels();
 }
 
 //Force full screen 
@@ -331,14 +394,42 @@ public int rowCorrespondingToPlace(String place) {
   return -1;
 }
 
-public void keyPressed() {
+public void keyReleased() {
   text = ((Textfield)controlP5.get(Textfield.class, "input")).getText();
+  showAllCountries = false;
   autoCompleteBox.clear();
+  println(text);
   for(int i = 0; i < countries.length; i++) {
-    if(countries[i].toLowerCase().startsWith(text.toLowerCase())) {
-            autoCompleteBox.addItem(countries[i], i);
+    if(text.length() == 0) {
+        autoCompleteBox.addItem(countries[i], i);      
     }
-  }   
+    else {
+      if(countries[i].toLowerCase().startsWith(text.toLowerCase())) {
+        autoCompleteBox.addItem(countries[i], i);
+      }
+    }
+  }
+  autoCompleteBox.update();  
+}
+
+public void selectPlaceButton(int theValue) {
+    text = ((Textfield)controlP5.get(Textfield.class, "input")).getText();
+    if(text != "") {
+      int index = containsElement(countries, text);
+      if(index > 0) {
+        placeIndex = index;
+        draw(); 
+      } 
+    }
+}
+
+public int containsElement(String[] arr, String val) {
+   for(int i = 0; i < arr.length; i++) {
+     if(arr[i].toLowerCase().equals(val.toLowerCase())) {
+        return i; 
+     }
+   } 
+   return -1;
 }
 
 public void controlEvent(ControlEvent theEvent) {
@@ -369,17 +460,18 @@ public void controlEvent(ControlEvent theEvent) {
       yearMin = floor(theEvent.getController().getArrayValue(0));
       yearMax = floor(theEvent.getController().getArrayValue(1));
       println("Slider: New Range Vals-> min: " + yearMin + " max: " + yearMax);
-      colsChanged = true;
+      colsChanged = true;   
     }
   }
   
  
 public void initAutoCompleteBox() {
   autoCompleteBox = controlP5.addListBox("myList")
-    .setPosition(20, 160)
-    .setSize(200, 200)
-    .setItemHeight(15)
-    .setBarHeight(15)
+    .setLabel("")
+    .setPosition(autoCompleteBoxX, autoCompleteBoxY)
+    .setSize(listBoxWidth, listBoxHeight)
+    .setItemHeight(listBoxItemHeight)
+    .setBarHeight(0)
     .setColorBackground(color(40, 128))
     .setColorActive(color(255, 128));
     
@@ -388,9 +480,11 @@ public void initAutoCompleteBox() {
 
 public void initDataSelectionBox() {
     dataSelectionBox = controlP5.addListBox("dataBox")
-    .setPosition(width - 250, 20)
-    .setSize(225, 225)
-    .setItemHeight(20)
+    .setLabel("")
+    .setPosition(dataBoxX, dataBoxY)
+    .setSize(listBoxWidth, listBoxHeight)
+    .setItemHeight(listBoxItemHeight)
+    .setBarHeight(0)
     .setColorBackground(color(40, 128))
     .setColorActive(color(255, 128));
   
@@ -403,29 +497,37 @@ public void initYearsSlider() {
       // disable broadcasting since setRange and setRangeValues will
       // trigger an event
       .setBroadcast(false)
-      .setPosition(400, 200)
-      .setSize(200, 40)
-      .setHandleSize(20)
+      .setLabel("")
+      .setPosition(yearsSliderX, yearsSliderY)
+      .setSize(yearsSliderWidth, yearsSliderHeight)
+      .setHandleSize(yearsSliderHandleSize)
       .setRange(floor(yearMin), floor(yearMax))
       .setRangeValues(floor(yearMin), floor(yearMax))
-      
       // after the initialization we turn broadcast back on again
       .setBroadcast(true)
       .setColorForeground(color(50,0,255))
-            .setColorBackground(color(0,0,0)); 
-  
+      .setColorActive(color(205,205,205))
+      .setColorBackground(color(0,0,0)); 
 }
 
 public void initTextField(PFont font) {    
   inputBox = controlP5.addTextfield("input")
-      .setPosition(20,100)
-      .setSize(200,40)
+      .setPosition(placeTextFieldX,placeTextFieldY)
+      .setSize(placeTextFieldWidth,placeTextFieldHeight)
       .setFont(font)
       .setFocus(true)
       .setColor(color(255,0,0))
+      .setLabel("")
       ;
 
   inputBox.setText(currentPlace);
+}
+
+public void initSelectButton() {
+   selectPlaceButton = controlP5.addButton("selectPlaceButton")
+                       .setPosition(selectButtonX, selectButtonY)
+                       .setSize(selectButtonWidth, selectButtonHeight)
+                       ;
 }
 
 void touchDown(int ID, float xPos, float yPos, float xWidth, float yWidth){
