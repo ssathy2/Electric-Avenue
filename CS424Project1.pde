@@ -1,8 +1,11 @@
-//////////////////////////////////////////////////////////////////////////
-import controlP5.*;
-////////////////////////////////////////////////////////////////////////// 
+import hypermedia.net.*;
 import omicronAPI.*;
-////////////////////////////////////////////////////////////////////////// 
+
+import controlP5.*;
+
+OmicronAPI omicronManager;
+TouchListener touchListener;
+PApplet applet;
 
 // declare some variables.
 FloatTable data;
@@ -17,10 +20,23 @@ float dataMin, dataMax;
 
 float plotX1, plotY1; 
 float plotX2, plotY2; 
+
 float labelX, labelY;
+
+// Control Position and Size vars
+// TextField
+int placeTextFieldX, placeTextFieldY;
+int placeTextFieldHeight, placeTextFieldWidth;
+int placeTextFieldTextSize;
+
+// 
 
 float labelDataMin = 0;
 float labelDataMax;
+
+int startCol;
+int endCol;
+boolean colsChanged = false;
 
 int yearMin, yearMax; 
 int[] years; 
@@ -36,6 +52,7 @@ ControlP5 controlP5;
 ListBox autoCompleteBox;
 ListBox dataSelectionBox;
 Textfield inputBox;
+Range yearRange;
 //ListBoxControlListener myListener;
 
 String text;
@@ -55,10 +72,22 @@ int scaleFactor = 2;
 
 PFont plotFont;
 
-void setup() {
+public void init() {
+  super.init();
+  omicronManager = new OmicronAPI(this);
+  //omicronManager.setFullscreen(true);
+}
+
+public void setup() {
   //size(1280, 650);
-  size(1000, 500);
+  size(1280, 800);
+  //size(720, 405);
+  touchListener = new TouchListener();
+  
+  omicronManager.setTouchListener(touchListener);
  
+  applet = this;
+  
   // load in all our data
   loadData();
 
@@ -67,35 +96,34 @@ void setup() {
   
   PFont font = createFont("arial", 20);
   
-  controlP5 = new ControlP5(this); 
-  inputBox = controlP5.addTextfield("input")
-    .setPosition(20,100)
-    .setSize(200,40)
-    .setFont(font)
-    .setFocus(true)
-    .setColor(color(255,0,0))
-    ;
- 
   countries = data.getRowNames();
   currentPlace = countries[0];
-  years = int(data.getColumnNames()); 
+
+  years = PApplet.parseInt(data.getColumnNames()); 
   
   yearMin = years[0]; 
   yearMax = years[years.length - 1]; 
+  startCol = 0;
+  endCol = years.length - 1;
   
   // Corners of the plotted time series
-  plotX1 = 120;
+  plotX1 = 150+70*scaleFactor; 
   plotX2 = width - 80;
-  labelX = 50;
-  plotY1 = 60;
-  plotY2 = height - 70;
-  labelY = height - 25;
- 
-  plotFont = createFont("SansSerif", 20);
+  labelX = 20+35*scaleFactor;
+  plotY1 = 60+30*scaleFactor;
+  plotY2 = height - 70 - 15*scaleFactor;
+  labelY = height - 25 - 5*scaleFactor;
+  
+  plotFont = createFont("SansSerif", 20*scaleFactor);
+  
   textFont(plotFont);
 
   smooth();
   
+  controlP5 = new ControlP5(this); 
+
+  initTextField(font);
+  initYearsSlider();
   initAutoCompleteBox();
   initDataSelectionBox();
   
@@ -104,42 +132,58 @@ void setup() {
   //controlP5.getGroup("myList").addListener(myListener);
 }
 
-void displayGraph(int row) {
+public void displayGraph(int row) {
    // Show the plot area as a white box 
   fill(255);
   rectMode(CORNERS);
   noStroke();
   rect(plotX1, plotY1, plotX2, plotY2);
 
-  stroke(#5679C1);
+  stroke(0xff5679C1);
   strokeWeight(2);
   drawDataLine(row); 
 }
 
-void displayTable(int row) {
+public void displayTable(int row) {
   fill(255);
   rectMode(CORNERS);
   noStroke();
   rect(plotX1, plotY1, plotX2, plotY2);
 
-  stroke(#5679C1);
+  stroke(0xff5679C1);
   strokeWeight(2);
   drawTable(row);
 }
 
-void drawTable(int row) {
+public void drawTable(int row) {
   
   
 }
 
-void draw() {
+public void draw() {
   background(224);
- 
+  
+  omicronManager.process();
+  
+  // don't keep looping over an array over and over again
+  if (colsChanged) {
+    startCol = data.getColumnIndex(String.valueOf(yearMin));
+    endCol = data.getColumnIndex(String.valueOf(yearMax));
+    if(((yearMax - yearMin) / 5) >= 1) {
+      yearInterval = ((yearMax - yearMin) / 5);
+    }
+    else {
+      yearInterval = 1;  
+    }
+    
+    colsChanged = false;
+  }
+  
   drawTitle();
   drawAxisLabels();
   drawYearLabels();
   
-  stroke(#5679C1);
+  stroke(0xff5679C1);
   strokeWeight(2);
   noFill();
   
@@ -153,12 +197,17 @@ void draw() {
     dataMin = data.getRowMin(row); 
     dataMax = data.getRowMax(row); 
     displayGraph(row);
+    //drawDataPoints(row);
   }
   drawUnitLabels();
 }
 
+//Force full screen 
+boolean sketchFullScreen() {
+    return true;
+}
 
-void drawTitle() {
+public void drawTitle() {
   fill(0);
   textSize(20);
   textAlign(LEFT);
@@ -167,7 +216,7 @@ void drawTitle() {
 }
 
 
-void drawAxisLabels() {
+public void drawAxisLabels() {
   fill(0);
   textSize(13);
   textLeading(15);
@@ -179,7 +228,7 @@ void drawAxisLabels() {
 }
 
 
-void drawYearLabels() {
+public void drawYearLabels() {
   fill(0);
   textSize(10);
   textAlign(CENTER, TOP);
@@ -188,7 +237,7 @@ void drawYearLabels() {
   stroke(224);
   strokeWeight(1);
  
-  for (int row = 0; row < years.length; row++) {
+  for (int row = startCol; row <= endCol; row++) {
     if (years[row] % yearInterval == 0) {
       float x = map(years[row], yearMin, yearMax, plotX1, plotX2);
       text(years[row], x, plotY2 + 10);
@@ -197,7 +246,7 @@ void drawYearLabels() {
   }
 }
 
-void drawUnitLabels() {
+public void drawUnitLabels() {
   fill(0);
   textSize(10);
   textAlign(RIGHT);
@@ -209,33 +258,34 @@ void drawUnitLabels() {
       float y = map(v, labelDataMin, dataMax, plotY2, plotY1);  
         if (v == labelDataMin) {
           textAlign(RIGHT);                 // Align by the bottom
-          text(floor(v), plotX1 - 10, y+4);
+          //text(floor(v), plotX1 - 10, y+4);
   
         } else if (v == dataMax) {
-          if(!(v < 1)) {
+          //if(!(v < 1)) {
             textAlign(RIGHT, TOP);            // Align by the top
-            text(floor(v), plotX1 - 10, y); 
-          }
-          else {
-            String dis = nf(v, 1, 4);
-            text(dis, plotX1 -10, y);
-          }
+            //text(floor(v), plotX1 - 10, y); 
+          //}
+          //else {
+            //String dis = nf(v, 1, 5);
+            //text(dis, plotX1 -10, y);
+         // }
         } else {
-          if(!(v < 1)) {
+          //if(!(v < 1)) {
             textAlign(RIGHT, CENTER);            // Align by the top
-            text(floor(v), plotX1 - 10, y); 
-          }
-          else {
-            String dis = nf(v, 1, 4);
-            text(dis, plotX1 -10, y);
-          }
+          //  text(floor(v), plotX1 - 10, y); 
+          //}
+          //else {
+         //   String dis = nf(v, 1, 5);
+          //  text(dis, plotX1 -10, y);
+          //}
         }
-        
+        String dis = nf(v, 1, 5);
+        text(dis, plotX1 -10, y);
         line(plotX1 - 4, y, plotX1, y);     // Draw major tick
   }
 }
 
-void loadData() {
+public void loadData() {
   totalPrimaryEnergyConsumption = new FloatTable("Total_Primary_Energy_Consumption_(Quadrillion_Btu).csv", "Quadrillion Btu", "Total Primary Energy Consumption"); 
   totalPrimaryEnergyConsumptionPerCapita = new FloatTable("Total_Primary_Energy_Consumption_per_Capita_(Million_Btu_per_Person).csv", "Million Btu\nper person", "Total Primary Energy Consumption per Person");
   totalCarbonDioxideConsumption = new FloatTable("Total_Carbon_Dioxide_Emissions_from_the_Consumption_of_Energy_(Million_Metric_Tons).csv", "Million\nMetric Tons", "Total Carbon Dioxide Emissions from Consumption of Energy");
@@ -245,9 +295,8 @@ void loadData() {
 }
 
 // Draw the data as a series of points 
-void drawDataPoints(int row) {
-  int colCount = data.getColumnCount();
-  for (int col = 0; col < colCount; col++) {
+public void drawDataPoints(int row) {
+  for (int col = startCol; col <= endCol; col++) {
     if (data.isValid(row, col)) {
       float value = data.getFloat(row, col);
       float x = map(years[col], yearMin, yearMax, plotX1, plotX2);
@@ -258,10 +307,9 @@ void drawDataPoints(int row) {
 }
 
 // Draw the data as a continuous line
-void drawDataLine(int row) {
-  int colCount = data.getColumnCount();
+public void drawDataLine(int row) {
   beginShape();
-  for (int col = 0; col < colCount; col++) {
+  for (int col = startCol; col <= endCol; col++) {
     if (data.isValid(row, col)) {
       float value = data.getFloat(row, col);
       float x = map(years[col], yearMin, yearMax, plotX1, plotX2);
@@ -273,7 +321,7 @@ void drawDataLine(int row) {
 }
 
 // method returns the row# corresponding to the index of the place passed in as a param...-1 returned if not found
-int rowCorrespondingToPlace(String place) {
+public int rowCorrespondingToPlace(String place) {
   String[] places = data.getRowNames();
   for(int i = 0; i <  places.length; i++) {
     if(places[i].equals(place)) {
@@ -283,8 +331,8 @@ int rowCorrespondingToPlace(String place) {
   return -1;
 }
 
-void keyPressed() {
-  text = controlP5.get(Textfield.class, "input").getText();
+public void keyPressed() {
+  text = ((Textfield)controlP5.get(Textfield.class, "input")).getText();
   autoCompleteBox.clear();
   for(int i = 0; i < countries.length; i++) {
     if(countries[i].toLowerCase().startsWith(text.toLowerCase())) {
@@ -293,7 +341,7 @@ void keyPressed() {
   }   
 }
 
-void controlEvent(ControlEvent theEvent) {
+public void controlEvent(ControlEvent theEvent) {
     if(theEvent.isGroup() && theEvent.name().equals("myList")){
       println(theEvent.group() + ": " + theEvent.group().value());
       placeIndex = (int)theEvent.group().value();
@@ -317,10 +365,16 @@ void controlEvent(ControlEvent theEvent) {
                 break;       
       }
     }
+    else if(theEvent.isFrom("yearsSlider")) {
+      yearMin = floor(theEvent.getController().getArrayValue(0));
+      yearMax = floor(theEvent.getController().getArrayValue(1));
+      println("Slider: New Range Vals-> min: " + yearMin + " max: " + yearMax);
+      colsChanged = true;
+    }
   }
   
  
-void initAutoCompleteBox() {
+public void initAutoCompleteBox() {
   autoCompleteBox = controlP5.addListBox("myList")
     .setPosition(20, 160)
     .setSize(200, 200)
@@ -332,7 +386,7 @@ void initAutoCompleteBox() {
     autoCompleteBox.addItems(countries);
 }
 
-void initDataSelectionBox() {
+public void initDataSelectionBox() {
     dataSelectionBox = controlP5.addListBox("dataBox")
     .setPosition(width - 250, 20)
     .setSize(225, 225)
@@ -342,3 +396,56 @@ void initDataSelectionBox() {
   
     dataSelectionBox.addItems(dataText);
 }
+
+public void initYearsSlider() {  
+  yearRange = controlP5
+      .addRange("yearsSlider")
+      // disable broadcasting since setRange and setRangeValues will
+      // trigger an event
+      .setBroadcast(false)
+      .setPosition(400, 200)
+      .setSize(200, 40)
+      .setHandleSize(20)
+      .setRange(floor(yearMin), floor(yearMax))
+      .setRangeValues(floor(yearMin), floor(yearMax))
+      
+      // after the initialization we turn broadcast back on again
+      .setBroadcast(true)
+      .setColorForeground(color(50,0,255))
+            .setColorBackground(color(0,0,0)); 
+  
+}
+
+public void initTextField(PFont font) {    
+  inputBox = controlP5.addTextfield("input")
+      .setPosition(20,100)
+      .setSize(200,40)
+      .setFont(font)
+      .setFocus(true)
+      .setColor(color(255,0,0))
+      ;
+
+  inputBox.setText(currentPlace);
+}
+
+void touchDown(int ID, float xPos, float yPos, float xWidth, float yWidth){
+  //("touchDown(): Called from Proj class");
+  println("X: " + xPos + " Y: " + yPos);
+  noFill();
+  stroke(255,0,0);
+  ellipse( xPos, yPos, xWidth * 2, yWidth * 2 );
+}// touchDown
+
+void touchMove(int ID, float xPos, float yPos, float xWidth, float yWidth){
+  //println("touchMove(): Called from Proj class");
+  noFill();
+  stroke(0,255,0);
+  ellipse( xPos, yPos, xWidth * 2, yWidth * 2 );
+}// touchMove
+
+void touchUp(int ID, float xPos, float yPos, float xWidth, float yWidth){
+  //println("touchUp(): Called from Proj class");
+  noFill();
+  stroke(0,0,255);
+  ellipse( xPos, yPos, xWidth * 2, yWidth * 2 );
+}// touchUp

@@ -1,12 +1,3 @@
-// first line of the file should be the column headers
-// first column should be the row titles
-// all other values are expected to be floats
-// getFloat(0, 0) returns the first data value in the upper lefthand corner
-// files should be saved as "text, tab-delimited"
-// empty rows are ignored
-// extra whitespace is ignored
-
-
 class FloatTable {
   int rowCount;
   int columnCount;
@@ -55,7 +46,7 @@ class FloatTable {
   }
   
   
-  void scrubQuotes(String[] array) {
+  public void scrubQuotes(String[] array) {
     for (int i = 0; i < array.length; i++) {
       if (array[i].length() > 2) {
         // remove quotes at start and end, if present
@@ -69,17 +60,17 @@ class FloatTable {
   }
   
   
-  int getRowCount() {
+  public int getRowCount() {
     return rowCount;
   }
   
   
-  String getRowName(int rowIndex) {
+  public String getRowName(int rowIndex) {
     return rowNames[rowIndex];
   }
   
   
-  String[] getRowNames() {
+  public String[] getRowNames() {
     return rowNames;
   }
 
@@ -88,7 +79,7 @@ class FloatTable {
   // This will return the index of the first row with this name.
   // A more efficient version of this function would put row names
   // into a Hashtable (or HashMap) that would map to an integer for the row.
-  int getRowIndex(String name) {
+  public int getRowIndex(String name) {
     for (int i = 0; i < rowCount; i++) {
       if (rowNames[i].equals(name)) {
         return i;
@@ -101,22 +92,22 @@ class FloatTable {
   
   // technically, this only returns the number of columns 
   // in the very first row (which will be most accurate)
-  int getColumnCount() {
+  public int getColumnCount() {
     return columnCount;
   }
   
   
-  String getColumnName(int colIndex) {
+  public String getColumnName(int colIndex) {
     return columnNames[colIndex];
   }
   
   
-  String[] getColumnNames() {
+  public String[] getColumnNames() {
     return columnNames;
   }
 
 
-  float getFloat(int rowIndex, int col) {
+  public float getFloat(int rowIndex, int col) {
     // Remove the 'training wheels' section for greater efficiency
     // It's included here to provide more useful error messages
     
@@ -133,7 +124,7 @@ class FloatTable {
   }
   
   
-  boolean isValid(int row, int col) {
+  public boolean isValid(int row, int col) {
     if (row < 0) return false;
     if (row >= rowCount) return false;
     //if (col >= columnCount) return false;
@@ -143,7 +134,7 @@ class FloatTable {
   }
 
 
-  float getColumnMin(int col) {
+  public float getColumnMin(int col) {
     float m = Float.MAX_VALUE;
     for (int row = 0; row < rowCount; row++) {
       if (isValid(row, col)) {
@@ -156,7 +147,7 @@ class FloatTable {
   }
 
 
-  float getColumnMax(int col) {
+  public float getColumnMax(int col) {
     float m = -Float.MAX_VALUE;
     for (int row = 0; row < rowCount; row++) {
       if (isValid(row, col)) {
@@ -169,7 +160,7 @@ class FloatTable {
   }
 
   
-  float getRowMin(int row) {
+  public float getRowMin(int row) {
     float m = Float.MAX_VALUE;
     for (int col = 0; col < columnCount; col++) {
       if (isValid(row, col)) {
@@ -182,7 +173,7 @@ class FloatTable {
   } 
 
 
-  float getRowMax(int row) {
+  public float getRowMax(int row) {
     float m = -Float.MAX_VALUE;
     for (int col = 0; col < columnCount; col++) {
       if (isValid(row, col)) {
@@ -195,7 +186,7 @@ class FloatTable {
   }
 
 
-  float getTableMin() {
+  public float getTableMin() {
     float m = Float.MAX_VALUE;
     for (int row = 0; row < rowCount; row++) {
       for (int col = 0; col < columnCount; col++) {
@@ -209,7 +200,7 @@ class FloatTable {
     return m;
   }
   
-  float calculateStandardDeviation(int row) {
+  public float calculateStandardDeviation(int row) {
    float mean = calculateMeanRow(row);
    float tmpArr[] = new float[columnCount];
    for(int i = 0; i < columnCount; i++) {
@@ -220,7 +211,7 @@ class FloatTable {
    return sqrt(calculateMeanArray(tmpArr));
   }
   
-  float calculateMeanArray(float arr[]){
+  public float calculateMeanArray(float arr[]){
     float retVal = 0;
     int count = 0;
     for(int i = 0; i < arr.length; i++) {
@@ -232,7 +223,7 @@ class FloatTable {
     return retVal / count;
   }
   
-  float calculateMeanRow(int row) {
+  public float calculateMeanRow(int row) {
     float tot = 0;
     int count = 0;
     for(int i = 0; i < columnCount; i++) {
@@ -244,7 +235,7 @@ class FloatTable {
     return tot/count;
   }
 
-  float getTableMax() {
+  public float getTableMax() {
     float m = -Float.MAX_VALUE;
     for (int row = 0; row < rowCount; row++) {
       for (int col = 0; col < columnCount; col++) {
@@ -256,5 +247,14 @@ class FloatTable {
       }
     }
     return m;
+  }
+  
+  public int getColumnIndex(String val) {
+    for(int i = 0; i < columnCount; i++){
+      if(columnNames[i].equals(val)) {
+        return i;
+      }
+    }
+    return -1;
   }
 }
