@@ -23,6 +23,8 @@ float plotX2, plotY2;
 
 float labelX, labelY;
 
+color textColor = color(205, 205, 205);
+
 boolean showAllCountries;
 // Control Position and Size vars
 // TextField
@@ -53,12 +55,23 @@ int yearsSliderHandleSize;
 int selectButtonX, selectButtonY;
 int selectButtonWidth, selectButtonHeight;
 
+// graphTableRadioButton related
+int graphTableRadioButtonX, graphTableRadioButtonY;
+int graphTableRadioButtonHeight, graphTableRadioButtonWidth;
+
+// helpButton related
+int helpButtonX, helpButtonY;
+
+// Creditsbutton related
+int creditsButtonX, creditsButtonY;
+
 // selectButton related
 float labelDataMin = 0;
 
 int startCol;
 int endCol;
 boolean colsChanged = false;
+boolean showGraph = true;
 
 int yearMin, yearMax; 
 int[] years; 
@@ -76,7 +89,16 @@ ListBox dataSelectionBox;
 Textfield inputBox;
 Range yearRange;
 Button selectPlaceButton;
+RadioButton graphTableRadioButton;
+Button helpButton;
+Button creditsButton;
+
 //ListBoxControlListener myListener;
+// Properties Related
+ControlWindow creditsWindow;
+ControlWindow helpWindow;
+Canvas properties;
+Canvas help;
 
 String text;
 String currentPlace;
@@ -104,7 +126,7 @@ public void init() {
 public void setup() {
   //size(1280, 650);
   size(1280, 800);
-  //size(720, 405);
+ // size(720, 405);
   touchListener = new TouchListener();
   
   //omicronManager.setTouchListener(touchListener);
@@ -132,19 +154,19 @@ public void setup() {
   endCol = years.length - 1;
   
   // Corners of the plotted time series
-  plotX1 = 150+70*scaleFactor;
-  plotX2 = width - 80;
+  plotX1 = 230+70*scaleFactor;
+  plotX2 = width - 20;
   labelX = 20+35*scaleFactor;
   plotY1 = 10+20*scaleFactor;
   plotY2 = height - 100 - 20*scaleFactor;
-  labelY = height - 80 - 5*scaleFactor;
+  labelY = height - 90 - 5*scaleFactor;
   // Control Position and Size vars
   
   // TextField
   placeTextFieldX = 10;
   placeTextFieldY = 10+30*scaleFactor;
   placeTextFieldHeight = 20 * scaleFactor;
-  placeTextFieldWidth = 105 * scaleFactor;
+  placeTextFieldWidth = 110 * scaleFactor;
   placeTextFieldTextSize = 20 * scaleFactor;
   
   // ListBox related
@@ -155,11 +177,11 @@ public void setup() {
 
   // AutoCompletBox
   autoCompleteBoxX = placeTextFieldX;
-  autoCompleteBoxY = placeTextFieldY + placeTextFieldHeight;
+  autoCompleteBoxY = placeTextFieldY + placeTextFieldHeight + 1;
 
     // DataBox
   dataBoxX = autoCompleteBoxX;
-  dataBoxY = autoCompleteBoxY + listBoxHeight;
+  dataBoxY = autoCompleteBoxY + listBoxHeight + 10 * scaleFactor;
   
   // yearsSlider related
   yearsSliderX = floor(plotX1);
@@ -169,11 +191,23 @@ public void setup() {
   yearsSliderHandleSize = 15 * scaleFactor;
   
   // selectPlace related
-  selectButtonX = 100;
-  selectButtonY = 100;
+  selectButtonX = placeTextFieldX + placeTextFieldWidth + 7;
+  selectButtonY = placeTextFieldY;
   selectButtonWidth = 40;
-  selectButtonHeight = 40;
+  selectButtonHeight = placeTextFieldHeight;
 
+  // graphTableRadioButton related
+  graphTableRadioButtonX = placeTextFieldX;
+  graphTableRadioButtonY = dataBoxY + listBoxItemHeight*6 + 20 * scaleFactor;
+  graphTableRadioButtonHeight = listBoxItemHeight;
+  graphTableRadioButtonWidth = listBoxItemHeight;
+  
+  // help and credits button related
+  helpButtonX = graphTableRadioButtonX;
+  helpButtonY = graphTableRadioButtonY + graphTableRadioButtonHeight + 20 * scaleFactor;
+  creditsButtonX = helpButtonX + 70;
+  creditsButtonY = helpButtonY;
+  
   plotFont = createFont("SansSerif", 20*scaleFactor);
   
   textFont(plotFont);
@@ -187,6 +221,11 @@ public void setup() {
   initAutoCompleteBox();
   initDataSelectionBox();
   initSelectButton();
+  initGraphTableRadioButton();
+  initCreditsWindow();
+  initHelpWindow();
+  initHelpButton();
+  initCreditsButton();
   
   //myListener = new ListBoxControlListener();
   
@@ -195,12 +234,12 @@ public void setup() {
 
 public void displayGraph(int row) {
    // Show the plot area as a white box 
-  fill(255);
+  fill(#262626);
   rectMode(CORNERS);
   noStroke();
   rect(plotX1, plotY1, plotX2, plotY2);
 
-  stroke(0xff5679C1);
+  stroke(#E6E66A);
   strokeWeight(2);
   drawDataLine(row); 
 }
@@ -222,7 +261,7 @@ public void drawTable(int row) {
 }
 
 public void draw() {
-  background(224);
+  background(color(#262626));
   omicronManager.process();
   
   // don't keep looping over an array over and over again
@@ -240,28 +279,37 @@ public void draw() {
   }
   
   drawTitle();
-  drawAxisLabels();
   
-  if((yearMax - yearMin) != 0) {
-    drawYearLabels();
-  
-    stroke(0xff5679C1);
-    strokeWeight(2);
-    noFill();
-  
-    if(placeIndex >= 0) {
-      currentPlace = countries[placeIndex];
-    }
+  if(showGraph) {
+    drawAxisLabels();
+    if((yearMax - yearMin) != 0) {  
+      if(placeIndex >= 0) {
+        currentPlace = countries[placeIndex];
+      }
     
+      if(currentPlace != "") {
+        int row = rowCorrespondingToPlace(currentPlace);
+        unitInterval = data.calculateStandardDeviation(row);
+        dataMin = data.getRowMin(row); 
+        dataMax = data.getRowMax(row); 
+        displayGraph(row);
+        //drawDataPoints(row);
+      }
+      drawUnitLabels();
+      drawYearLabels();
+    }
+  }
+  else {
+    if(placeIndex >= 0) {
+        currentPlace = countries[placeIndex];
+      }
     if(currentPlace != "") {
       int row = rowCorrespondingToPlace(currentPlace);
       unitInterval = data.calculateStandardDeviation(row);
       dataMin = data.getRowMin(row); 
       dataMax = data.getRowMax(row); 
-      displayGraph(row);
-      //drawDataPoints(row);
+      displayTable(row); 
     }
-    drawUnitLabels();
   }
 }
 
@@ -271,17 +319,17 @@ boolean sketchFullScreen() {
 }
 
 public void drawTitle() {
-  fill(0);
-  textSize(20);
-  textAlign(LEFT);
+  fill(textColor);
+  textSize(10 * scaleFactor);
+  textAlign(CENTER);
   String title = data.tableTitle + ": " + currentPlace;
-  text(title, plotX1, plotY1 - 10);
+  text(title, (plotX1+plotX2)/2, plotY1 - 10);
 }
 
 
 public void drawAxisLabels() {
-  fill(0);
-  textSize(13);
+  fill(textColor);
+  textSize(6 * scaleFactor);
   textLeading(15);
  
   textAlign(CENTER, CENTER);
@@ -292,26 +340,26 @@ public void drawAxisLabels() {
 
 
 public void drawYearLabels() {
-  fill(0);
-  textSize(10);
+  fill(textColor);
+  textSize(6 * scaleFactor);
   textAlign(CENTER, TOP);
  
   // Use thin, gray lines to draw the grid
-  stroke(224);
+  stroke(128);
   strokeWeight(1);
- 
+  
   for (int row = startCol; row <= endCol; row++) {
     if (years[row] % yearInterval == 0) {
       float x = map(years[row], yearMin, yearMax, plotX1, plotX2);
       text(years[row], x, plotY2 + 10);
-      line(x, plotY1, x, plotY2);
+      line(x, plotY1, x, plotY2 + 5);
     }
   }
 }
 
 public void drawUnitLabels() {
-  fill(0);
-  textSize(10);
+  fill(textColor);
+  textSize(6 * scaleFactor);
   textAlign(RIGHT);
   
   stroke(128);
@@ -344,7 +392,7 @@ public void drawUnitLabels() {
         }
         String dis = nf(v, 1, 5);
         text(dis, plotX1 -10, y);
-        line(plotX1 - 4, y, plotX1, y);     // Draw major tick
+        line(plotX1 - 4, y, plotX2, y);     // Draw major tick
   }
 }
 
@@ -506,7 +554,7 @@ public void initYearsSlider() {
       // after the initialization we turn broadcast back on again
       .setBroadcast(true)
       .setColorForeground(color(50,0,255))
-      .setColorActive(color(205,205,205))
+      .setColorActive(color(#A8EBA4))
       .setColorBackground(color(0,0,0)); 
 }
 
@@ -524,12 +572,99 @@ public void initTextField(PFont font) {
 }
 
 public void initSelectButton() {
+   PImage[] imgs = {loadImage("button_a.png"),loadImage("button_b.png"),loadImage("button_c.png")};
    selectPlaceButton = controlP5.addButton("selectPlaceButton")
                        .setPosition(selectButtonX, selectButtonY)
                        .setSize(selectButtonWidth, selectButtonHeight)
+                       .setLabelVisible(false)
+                       .setImages(imgs)
+                       .updateSize()
                        ;
 }
 
+public void initGraphTableRadioButton() {
+  graphTableRadioButton = controlP5.addRadioButton("graphTableRadioButton")
+                      .setPosition(graphTableRadioButtonX, graphTableRadioButtonY)
+                      .setSize(graphTableRadioButtonWidth, graphTableRadioButtonHeight)
+                      .setColorForeground(color(120))
+                      .setColorActive(color(255))
+                      .setColorLabel(color(255))
+                      .setItemsPerRow(2)
+                      .setSpacingColumn(50)
+                      .addItem("Graph", 1)
+                      .addItem("Table", 2)
+                      .setLabel("")
+                      ;
+   graphTableRadioButton.activate(0);
+}
+
+public void initCreditsWindow() {
+  creditsWindow = controlP5.addControlWindow("creditsWindow", 100, 100, 300, 400);
+  properties = new PropertiesCanvas();
+  properties.pre();
+  creditsWindow.addCanvas(properties);
+  creditsWindow.hide();
+}
+
+public void initHelpWindow() {
+  helpWindow = controlP5.addControlWindow("helpWindow", 100, 100, 300, 400);
+  help = new HelpCanvas();
+  help.pre();
+  helpWindow.addCanvas(help);
+  helpWindow.hide();
+}
+
+public void creditsButton(int a) {  
+  creditsWindow.show();
+}
+
+public void helpButton(int a) {
+  helpWindow.show();
+}
+
+public void initCreditsButton() {
+  PImage imgs = loadImage("credits_50.png");
+  creditsButton = controlP5.addButton("creditsButton")
+                .setPosition(creditsButtonX, creditsButtonY)
+                .setImage(imgs)
+                .setCaptionLabel("Credits")
+                ;
+}
+
+public void initHelpButton() {
+  PImage imgs = loadImage("help_50.png");
+  helpButton = controlP5.addButton("helpButton")
+                .setPosition(helpButtonX, helpButtonY)
+                .setImage(imgs)
+                .setCaptionLabel("Help")
+                ;
+}
+
+public void graphTableRadioButton(int a) {
+  println(a); 
+  if(a == 1) {
+     showGraph = true;
+     //graphTableRadioButton.deactivateAll();
+     //graphTableRadioButton.activate(1);
+   } 
+   else if(a == 2){
+     showGraph = false;
+     //graphTableRadioButton.deactivateAll();
+     //graphTableRadioButton.activate(2);
+   }
+   else {
+     println("0 : "  + graphTableRadioButton.getState(0) + " 1 : " + graphTableRadioButton.getState(1));
+     if(graphTableRadioButton.getState(0) && !graphTableRadioButton.getState(1)) {
+       graphTableRadioButton.deactivateAll();
+       graphTableRadioButton.activate(0);
+     }
+     else { 
+       graphTableRadioButton.deactivateAll();
+       graphTableRadioButton.activate(1);
+     }
+   }
+}
+  
 void touchDown(int ID, float xPos, float yPos, float xWidth, float yWidth){
   //("touchDown(): Called from Proj class");
   println("X: " + xPos + " Y: " + yPos);
