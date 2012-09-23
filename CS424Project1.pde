@@ -107,8 +107,8 @@ String currentPlace;
 String[] dataText = { 
 "Total Primary Energy Consumption", 
 "Total Primary Energy Consumption Per Capita", 
-"Total Carbon Dioxide Consumption",
-"Total Carbon Dioxide Consumption Per Capita",
+"Total Carbon Dioxide Emissions",
+"Total Carbon Dioxide Emissions Per Capita",
 "Total Primary Energy Production",
 "Total Renewable Electricity Generation" };
 
@@ -553,8 +553,8 @@ public void drawUnitLabels() {
 public void loadData() {
   totalPrimaryEnergyConsumption = new FloatTable("Total_Primary_Energy_Consumption_(Quadrillion_Btu).csv", "Quadrillion Btu", "Total Primary Energy Consumption"); 
   totalPrimaryEnergyConsumptionPerCapita = new FloatTable("Total_Primary_Energy_Consumption_per_Capita_(Million_Btu_per_Person).csv", "Million Btu\nper person", "Total Primary Energy Consumption Per Capita");
-  totalCarbonDioxideConsumption = new FloatTable("Total_Carbon_Dioxide_Emissions_from_the_Consumption_of_Energy_(Million_Metric_Tons).csv", "Million Metric Tons", "Total Carbon Dioxide Consumption");
-  totalCarbonDioxideConsumptionPerCapita = new FloatTable("Per_Capita_Carbon_Dioxide_Emissions_from_the_Consumption_of_Energy_(Metric_Tons_of_Carbon_Dioxide_per_Person).csv", "Metric Tons of Carbon Dioxide\nper Person", "Total Carbon Dioxide Consumption Per Capita");
+  totalCarbonDioxideConsumption = new FloatTable("Total_Carbon_Dioxide_Emissions_from_the_Consumption_of_Energy_(Million_Metric_Tons).csv", "Million Metric Tons", "Total Carbon Dioxide Emissions");
+  totalCarbonDioxideConsumptionPerCapita = new FloatTable("Per_Capita_Carbon_Dioxide_Emissions_from_the_Consumption_of_Energy_(Metric_Tons_of_Carbon_Dioxide_per_Person).csv", "Metric Tons of Carbon Dioxide\nper Person", "Total Carbon Dioxide Emissions Per Capita");
   totalPrimaryEnergyProduction = new FloatTable("Total_Primary_Energy_Production_(Quadrillion_Btu).csv", "Quadrillion Btu", "Total Primary Energy Production");
   totalRenewableElectricityGeneration = new FloatTable("Total_Renewable_Electricity_Net_Generation_(Billion_Kilowatthours).csv", "Billion Kilowatthours", "Total Renewable Electricity Generation");
 }
