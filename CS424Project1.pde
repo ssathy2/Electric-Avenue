@@ -1,3 +1,4 @@
+import processing.net.*;
 import controlP5.*;
 import hypermedia.net.*;
 import omicronAPI.*;
@@ -131,11 +132,11 @@ public void init() {
 
 public void setup() {
   if(displayOnWall) {
-    size(8160, 2304);
+    size(8160, 2304, JAVA2D);
     scaleFactor = 5;
   }
   else {
-    size(1280, 800);
+    size(1280, 800, JAVA2D);
     scaleFactor = 2;
   }
   touchListener = new TouchListener();
@@ -164,7 +165,7 @@ public void setup() {
   endCol = years.length - 1;
   
   // Corners of the plotted time series
-  plotX1 = 100 + 150*scaleFactor;
+  plotX1 = 100 + 200*scaleFactor;
   plotX2 = width - 20;
   labelX = 35*scaleFactor;
   plotY1 = 25*scaleFactor;
@@ -181,7 +182,7 @@ public void setup() {
   placeTextFieldX = 10;
   placeTextFieldY = displayOnWall?40*scaleFactor:25*scaleFactor;
   placeTextFieldHeight = 20 * scaleFactor;
-  placeTextFieldWidth = 130 * scaleFactor;
+  placeTextFieldWidth = 180 * scaleFactor;
   placeTextFieldTextSize = 20 * scaleFactor;
   
   // ListBox related
@@ -233,8 +234,11 @@ public void setup() {
 
   smooth();
   
-  controlP5 = new ControlP5(this); 
-
+  controlP5 = new ControlP5(this);
+  PFont listBoxFont = createFont("SansSerif", 8 * scaleFactor);
+  ControlFont listBoxF = new ControlFont(listBoxFont);
+  controlP5.setFont(listBoxF);
+  
   initTextField();
   initYearsSlider();
   initAutoCompleteBox();
@@ -741,6 +745,7 @@ public void initAutoCompleteBox() {
     .setColorActive(color(255, 128));
     
     autoCompleteBox.addItems(countries);
+    autoCompleteBox.toUpperCase(false);  
 }
 
 public void initDataSelectionBox() {
@@ -753,8 +758,9 @@ public void initDataSelectionBox() {
     .setBarHeight(0)
     .setColorBackground(color(#4C4D46))
     .setColorActive(color(255, 128));
-  
+    
     dataSelectionBox.addItems(dataText);
+    dataSelectionBox.toUpperCase(false);
 }
 
 public void initYearsSlider() {  
@@ -797,7 +803,7 @@ public void initGraphTableRadioButton() {
                       .setColorActive(color(255))
                       .setColorLabel(color(255))
                       .setItemsPerRow(2)
-                      .setSpacingColumn(50)
+                      .setSpacingColumn(scaleFactor * 30)
                       .addItem("Graph", 1)
                       .addItem("Table", 2)
                       .setLabel("")
@@ -924,7 +930,7 @@ void touchDown(int ID, float xPos, float yPos, float xWidth, float yWidth){
   stroke(255,0,0);
   ellipse( xPos, yPos, xWidth * 2, yWidth * 2 );
   controlP5.getPointer().set(floor(xPos), floor(yPos));
-  //controlP5.getPointer().pressed();
+  controlP5.getPointer().pressed();
 }// touchDown
 
 void touchMove(int ID, float xPos, float yPos, float xWidth, float yWidth){
@@ -941,5 +947,5 @@ void touchUp(int ID, float xPos, float yPos, float xWidth, float yWidth){
   stroke(0,0,255);
   ellipse( xPos, yPos, xWidth * 2, yWidth * 2 );
   controlP5.getPointer().set(floor(xPos), floor(yPos));  
-  //controlP5.getPointer().released();
+  controlP5.getPointer().released();
 }// touchUp
