@@ -930,7 +930,9 @@ void touchDown(int ID, float xPos, float yPos, float xWidth, float yWidth){
   stroke(255,0,0);
   ellipse( xPos, yPos, xWidth * 2, yWidth * 2 );
   controlP5.getPointer().set(floor(xPos), floor(yPos));
-  controlP5.getPointer().pressed();
+  if(displayOnWall) {
+    controlP5.getPointer().pressed();
+  }
 }// touchDown
 
 void touchMove(int ID, float xPos, float yPos, float xWidth, float yWidth){
@@ -947,5 +949,7 @@ void touchUp(int ID, float xPos, float yPos, float xWidth, float yWidth){
   stroke(0,0,255);
   ellipse( xPos, yPos, xWidth * 2, yWidth * 2 );
   controlP5.getPointer().set(floor(xPos), floor(yPos));  
-  controlP5.getPointer().released();
+  if(displayOnWall) {
+    controlP5.getPointer().released();
+  }
 }// touchUp
