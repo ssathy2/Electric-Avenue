@@ -143,7 +143,7 @@ public void setup() {
   
   omicronManager.setTouchListener(touchListener);
   
-  if(showOnWall) {
+  if(displayOnWall) {
     omicronManager.ConnectToTracker(7001, 7340, "131.193.77.159");
   }
   
