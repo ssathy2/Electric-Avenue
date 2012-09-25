@@ -142,7 +142,11 @@ public void setup() {
   touchListener = new TouchListener();
   
   omicronManager.setTouchListener(touchListener);
-  //omicronManager.ConnectToTracker(7001, 7340, "131.193.77.104");
+  
+  if(showOnWall) {
+    omicronManager.ConnectToTracker(7001, 7340, "131.193.77.159");
+  }
+  
   showAllCountries = true;
   font = createFont("SansSerif", 10 * scaleFactor);
 
