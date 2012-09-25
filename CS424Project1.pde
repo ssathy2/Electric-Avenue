@@ -132,11 +132,11 @@ public void init() {
 
 public void setup() {
   if(displayOnWall) {
-    size(8160, 2304, JAVA2D);
+    size(8160, 2304, P3D);
     scaleFactor = 5;
   }
   else {
-    size(1280, 800, JAVA2D);
+    size(1280, 800);
     scaleFactor = 2;
   }
   touchListener = new TouchListener();
