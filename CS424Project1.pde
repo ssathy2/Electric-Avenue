@@ -120,7 +120,7 @@ int scaleFactor;
 PFont plotFont;
 PFont font;
 
-boolean displayOnWall = false;
+boolean displayOnWall = true;
 boolean displayHelp = false;
 boolean displayCredits = false;
 
